@@ -1,48 +1,81 @@
-# Build stage - Use Rust nightly for edition2024 dependencies
+# ===========================================
+# Webrana AI Proxy - Backend Dockerfile
+# Multi-stage build for Rust/Axum backend
+# ===========================================
+
+# Build stage - Use Rust nightly for latest features
 FROM rustlang/rust:nightly-bookworm AS builder
 
 WORKDIR /app
 
-# Copy manifests
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy manifests first for dependency caching
 COPY backend/Cargo.toml backend/Cargo.lock ./
 
-# Copy migrations (needed for sqlx::migrate! macro at compile time)
+# Create dummy src to cache dependencies
+RUN mkdir src && \
+    echo "fn main() { println!(\"dummy\"); }" > src/main.rs
+
+# Build dependencies only (this layer is cached)
+RUN cargo build --release 2>/dev/null || true
+RUN rm -rf src
+
+# Copy migrations (needed for sqlx::migrate! macro)
 COPY backend/migrations ./migrations
 
-# Create dummy src to cache dependencies
-# Note: Initial build may fail if sqlx macros need DB - this is expected
-# The actual build happens after copying real source
-RUN mkdir src && echo "fn main() {}" > src/main.rs
-RUN cargo build --release 2>/dev/null || echo "Dependency pre-cache skipped (expected for sqlx)"
-RUN rm -rf src
+# Copy .sqlx for offline mode (if exists)
+COPY backend/.sqlx ./.sqlx 2>/dev/null || true
 
 # Copy actual source
 COPY backend/src ./src
 
-# Build release binary
+# Set SQLx to offline mode for builds without DB
+ENV SQLX_OFFLINE=true
+
+# Touch main.rs to invalidate cache and rebuild with real source
 RUN touch src/main.rs && cargo build --release
 
-# Runtime stage
-FROM debian:bookworm-slim
+# Runtime stage - minimal image
+FROM debian:bookworm-slim AS runtime
 
-# Install required packages including DNS resolver support
-RUN apt-get update && apt-get install -y \
+# Labels for container metadata
+LABEL org.opencontainers.image.title="Webrana Backend"
+LABEL org.opencontainers.image.description="Webrana AI Proxy Backend API Server"
+LABEL org.opencontainers.image.vendor="Webrana"
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libssl3 \
-    libnss3 \
     curl \
     && rm -rf /var/lib/apt/lists/* \
-    && echo "hosts: files dns" > /etc/nsswitch.conf
+    && apt-get clean
 
 WORKDIR /app
 
 # Copy binary from builder
 COPY --from=builder /app/target/release/webrana-backend /app/webrana-backend
 
-# Create non-root user
-RUN useradd -r -s /bin/false webrana
+# Copy migrations for runtime migration support
+COPY --from=builder /app/migrations /app/migrations
+
+# Create non-root user for security
+RUN groupadd -r webrana && useradd -r -g webrana webrana \
+    && chown -R webrana:webrana /app
+
 USER webrana
 
+# Expose API port
 EXPOSE 3000
 
+# Health check for container orchestration
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
+
+# Run the binary
 CMD ["/app/webrana-backend"]
