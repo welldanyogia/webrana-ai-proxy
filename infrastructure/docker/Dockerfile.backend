@@ -10,8 +10,10 @@ COPY backend/Cargo.toml backend/Cargo.lock ./
 COPY backend/migrations ./migrations
 
 # Create dummy src to cache dependencies
+# Note: Initial build may fail if sqlx macros need DB - this is expected
+# The actual build happens after copying real source
 RUN mkdir src && echo "fn main() {}" > src/main.rs
-RUN cargo build --release || true
+RUN cargo build --release 2>/dev/null || echo "Dependency pre-cache skipped (expected for sqlx)"
 RUN rm -rf src
 
 # Copy actual source

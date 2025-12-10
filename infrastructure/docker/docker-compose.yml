@@ -19,12 +19,14 @@ services:
         reservations:
           cpus: '0.5'
           memory: 512M
+    env_file:
+      - .env.dev
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/webrana
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-webrana}
       - REDIS_URL=redis://redis:6379
-      - MASTER_ENCRYPTION_KEY=dGVzdC1lbmNyeXB0aW9uLWtleS0zMi1ieXRlcw==
-      - JWT_SECRET=dev-jwt-secret-change-in-production
-      - RUST_LOG=debug
+      - MASTER_ENCRYPTION_KEY=${MASTER_ENCRYPTION_KEY:?MASTER_ENCRYPTION_KEY is required}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - RUST_LOG=${RUST_LOG:-debug}
       - CARGO_HOME=/usr/local/cargo
     command: >
       bash -c "cargo build && cargo run"
@@ -57,12 +59,14 @@ services:
         reservations:
           cpus: '0.25'
           memory: 256M
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/webrana
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - REDIS_URL=redis://redis:6379
-      - MASTER_ENCRYPTION_KEY=${MASTER_ENCRYPTION_KEY}
-      - JWT_SECRET=${JWT_SECRET}
-      - RUST_LOG=info
+      - MASTER_ENCRYPTION_KEY=${MASTER_ENCRYPTION_KEY:?MASTER_ENCRYPTION_KEY is required}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - RUST_LOG=${RUST_LOG:-info}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
@@ -80,10 +84,10 @@ services:
 
   frontend:
     build:
-      context: ../..
-      dockerfile: infrastructure/docker/Dockerfile.frontend
+      context: ../../frontend
+      dockerfile: ../infrastructure/docker/Dockerfile.frontend
     ports:
-      - "3001:3000"
+      - "3001:3001"
     deploy:
       resources:
         limits:
@@ -95,7 +99,7 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:3000
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "curl", "-f", "http://localhost:3001"]
       interval: 30s
       timeout: 10s
       retries: 3
