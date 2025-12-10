@@ -1,4 +1,4 @@
-# Build stage - Use Rust nightly for edition2024 support
+# Build stage - Use Rust nightly for edition2024 dependencies
 FROM rustlang/rust:nightly-bookworm AS builder
 
 WORKDIR /app
@@ -6,9 +6,12 @@ WORKDIR /app
 # Copy manifests
 COPY backend/Cargo.toml backend/Cargo.lock ./
 
+# Copy migrations (needed for sqlx::migrate! macro at compile time)
+COPY backend/migrations ./migrations
+
 # Create dummy src to cache dependencies
 RUN mkdir src && echo "fn main() {}" > src/main.rs
-RUN cargo build --release
+RUN cargo build --release || true
 RUN rm -rf src
 
 # Copy actual source
