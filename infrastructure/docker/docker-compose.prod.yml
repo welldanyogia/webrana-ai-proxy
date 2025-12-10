@@ -93,6 +93,9 @@ services:
 
   # Frontend (Next.js)
   frontend:
+    build:
+      context: ../../frontend
+      dockerfile: ../infrastructure/docker/Dockerfile.frontend
     image: ${FRONTEND_IMAGE:-webrana/frontend:latest}
     container_name: webrana-frontend
     restart: unless-stopped
