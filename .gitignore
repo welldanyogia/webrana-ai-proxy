@@ -86,3 +86,7 @@ data/
 # Temporary files
 tmp/
 temp/
+
+# Kiro state files
+.kiro/project_state.md
+.kiro/*.log
