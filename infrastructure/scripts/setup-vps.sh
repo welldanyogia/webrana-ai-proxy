@@ -27,10 +27,11 @@ USERNAME="webrana"
 DEPLOY_DIR="/opt/webrana"
 
 echo -e "${YELLOW}Step 1: Updating system...${NC}"
-apt update && apt upgrade -y
+export DEBIAN_FRONTEND=noninteractive
+apt update && apt upgrade -y -o Dpkg::Options::="--force-confold"
 
 echo -e "${YELLOW}Step 2: Installing essential packages...${NC}"
-apt install -y \
+apt install -y -o Dpkg::Options::="--force-confold" \
     curl \
     wget \
     git \
