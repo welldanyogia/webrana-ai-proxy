@@ -13,7 +13,9 @@ NC='\033[0m' # No Color
 
 # Configuration
 DEPLOY_DIR="/opt/webrana"
-REPO_URL="https://github.com/your-org/webrana-ai-proxy.git"
+# For private repos, set GIT_REPO_URL with token: https://<user>:<PAT>@github.com/...
+# Or use SSH: git@github.com:welldanyogia/webrana-ai-proxy.git
+REPO_URL="${GIT_REPO_URL:-https://github.com/welldanyogia/webrana-ai-proxy.git}"
 BRANCH="${BRANCH:-main}"
 COMPOSE_FILE="infrastructure/docker/docker-compose.prod.yml"
 
