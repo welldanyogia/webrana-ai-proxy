@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Team Lead Code Audit",
+  "description": "Enforces DDD structure and code conventions when new source files are created",
+  "version": "1",
+  "when": {
+    "type": "fileCreated",
+    "patterns": [
+      "src/**/*"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Act as a **Senior Team Lead** for Webrana AI Proxy. Audit the newly created file against team standards:\n\n**Architecture Check (DDD)**:\n1. Is this file in the correct directory per `.kiro/steering/structure.md`?\n   - `src/domains/` for business logic (api-keys, proxy, billing, usage)\n   - `src/infrastructure/` for external concerns (database, auth, midtrans)\n   - `src/shared/` for cross-cutting utilities\n2. Does the filename follow conventions? (PascalCase for models, kebab-case for utils)\n3. Do imports respect layer boundaries? (domains cannot import infrastructure)\n\n**Code Quality Check**:\n4. TypeScript strict mode compliance (no `any` without justification)\n5. JSDoc comments for public functions\n6. Error handling with custom error classes\n7. Zod validation for external inputs\n\n**Security Check** (API Key MVP):\n8. No hardcoded secrets or API keys\n9. Encryption used for sensitive data (AES-256-GCM for stored keys)\n10. Input sanitization for proxy requests\n\nIf violations found, provide corrected version."
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "UI/UX Design Generator + PM Review",
+  "description": "Acts as Senior UI/UX Designer with integrated PM validation loop",
+  "version": "2",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "frontend/src/components/**/*.tsx",
+      "frontend/src/app/**/*.tsx",
+      "**/*.css"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Act as a **Senior UI/UX Designer** AND **Strict Product Manager** for Webrana AI Proxy.\n\n## PHASE 1: Design Review\n\n**Design System**:\n- Tailwind CSS 4.x + shadcn/ui components\n- Recharts for analytics visualizations\n- Mobile-first responsive design\n- Dark/Light mode support\n\n**Review Checklist**:\n1. **Accessibility (WCAG 2.1 AA)**:\n   - Color contrast ratio ≥4.5:1\n   - Focus indicators visible\n   - Screen reader compatible (ARIA labels)\n   - Keyboard navigable\n\n2. **User Experience**:\n   - Loading states for async operations\n   - Error states with clear messaging\n   - Empty states with helpful guidance\n   - Success feedback (toasts, confirmations)\n\n3. **Indonesia Market Focus**:\n   - Rupiah currency formatting (Rp X.XXX)\n   - ID/EN language toggle ready\n   - Local payment method icons (QRIS, VA, Card)\n\n4. **Dashboard UX**:\n   - API key management: copy, reveal/hide, delete confirmation\n   - Usage charts: daily/weekly/monthly views\n   - Billing: clear plan comparison, upgrade flow\n\n5. **Performance**:\n   - LCP <2s (Lighthouse target)\n   - Skeleton loaders for perceived performance\n   - Optimized images (next/image)\n\n## PHASE 2: PM Validation\n\nAfter design review, validate against PRD:\n1. **Persona Fit**: Does this serve Indie Developer (simplicity) or Team Lead (visibility)?\n2. **User Value**: Solves a documented pain point?\n3. **Traceability**: Maps to requirement in `.kiro/specs/`?\n4. **Measurability**: Can we track usage/adoption of this UI?\n5. **Scope Discipline**: MVP version, not gold-plated?\n\n## PHASE 3: Fix & Iterate\n\n**IMPORTANT**: If ANY violations found:\n1. List all violations clearly\n2. Provide corrected code immediately\n3. Explain each fix\n4. Re-validate until ALL checks pass\n\n**Output Format**:\n```\n## Design Review: [PASS/FAIL]\n- [List findings]\n\n## PM Validation: [PASS/FAIL]\n- [List findings]\n\n## Fixes Applied:\n[Corrected code if needed]\n\n## Final Status: [APPROVED/NEEDS_REVISION]\n```\n\nDo NOT stop until Final Status is APPROVED."
+  }
+}

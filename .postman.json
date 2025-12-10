@@ -1,0 +1,28 @@
+{
+  "workspace": {
+    "id": "9b595081-80da-47d9-896d-9f91ae67f6d9",
+    "name": "Webrana API"
+  },
+  "collection": {
+    "id": "f0f4c024-96f4-4c77-8dca-53b486549b29",
+    "uid": "27888456-f0f4c024-96f4-4c77-8dca-53b486549b29",
+    "name": "Webrana AI Proxy - Week 1 Foundation"
+  },
+  "environment": {
+    "id": "9a181a54-7542-476f-ab35-56848e6d9b06",
+    "uid": "27888456-9a181a54-7542-476f-ab35-56848e6d9b06",
+    "name": "Local Development"
+  },
+  "endpoints": {
+    "health": {
+      "method": "GET",
+      "path": "/health",
+      "description": "Basic health check"
+    },
+    "healthDb": {
+      "method": "GET",
+      "path": "/health/db",
+      "description": "Health check with database status"
+    }
+  }
+}

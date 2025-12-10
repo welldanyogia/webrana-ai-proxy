@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "Auto-Sync Design Docs + PM Validation",
+  "description": "Updates design documentation when models change with PM compliance check",
+  "version": "2",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "backend/src/models/**/*.rs",
+      "backend/migrations/*.sql"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "📄 **Auto-Sync Design Docs + PM Validation**\n\nA data model or migration was modified. Sync documentation and validate.\n\n## PHASE 1: Model Review\n\n**Check alignment with PRD data models**:\n- Users (id, email, password_hash, plan, created_at, email_verified)\n- ApiKeys (id, user_id, provider, label, encrypted_key, iv, is_valid)\n- ProxyApiKeys (id, user_id, key_prefix, key_hash)\n- ProxyRequests (id, user_id, model, provider, tokens_*, latency_ms, status_code)\n- Subscriptions (id, user_id, plan, status, midtrans_subscription_id)\n- Invoices (id, user_id, amount, status, midtrans_transaction_id)\n\n**Schema Requirements**:\n- All tables have: id UUID, created_at, updated_at\n- Foreign keys properly defined\n- Indexes for query performance\n\n## PHASE 2: Documentation Sync\n\n1. Update `.kiro/specs/*/design.md` - Data Models section if needed\n2. Check if new fields affect API contracts\n3. Verify TypeScript types match Rust structs (if applicable)\n\n## PHASE 3: PM Validation\n\n1. **Breaking Changes**: Database migration needed?\n2. **API Versioning**: Required for breaking changes?\n3. **Backward Compatibility**: Maintained?\n4. **Traceability**: Model changes map to requirements?\n\n## PHASE 4: Fix & Iterate\n\n**IMPORTANT**: If ANY issues found:\n1. List all issues clearly\n2. Propose documentation updates\n3. Flag breaking changes prominently\n4. Re-validate until ALL checks pass\n\n**Output Format**:\n```\n## Model Review: [PASS/FAIL]\n- [List findings]\n\n## Documentation Updates Needed:\n- [List files and changes]\n\n## PM Validation: [PASS/FAIL]\n- Breaking changes: [Yes/No]\n- Migration required: [Yes/No]\n\n## Final Status: [APPROVED/NEEDS_REVISION]\n```\n\nDo NOT stop until Final Status is APPROVED."
+  }
+}

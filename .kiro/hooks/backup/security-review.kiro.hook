@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Security Review",
+  "description": "SENTINEL security review when encryption, auth, or payment files are modified",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/infrastructure/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "🔒 **SENTINEL Security Review Triggered**\n\nA sensitive infrastructure file was modified. Perform security audit:\n\n**Encryption Check** (API Key Storage):\n1. AES-256-GCM used for API key encryption?\n2. IV (Initialization Vector) unique per encryption?\n3. Master key from environment variable (not hardcoded)?\n4. Key rotation mechanism in place?\n\n**Authentication Check**:\n5. Password hashing with Argon2id?\n6. JWT tokens have expiration?\n7. Session management secure?\n8. Rate limiting on auth endpoints?\n\n**Database Security**:\n9. Row-Level Security (RLS) enabled?\n10. Parameterized queries (no SQL injection)?\n11. Sensitive data encrypted at rest?\n12. Connection using SSL?\n\n**Compliance**:\n13. Indonesian PP 71/2019 data protection?\n14. No PII in logs?\n\nFlag any CRITICAL or HIGH severity issues immediately."
+  }
+}

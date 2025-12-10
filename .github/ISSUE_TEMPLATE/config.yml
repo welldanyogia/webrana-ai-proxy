@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discord Community
+    url: https://discord.gg/webrana
+    about: Join our Discord for real-time support and discussions
+  - name: 📧 Email Support
+    url: mailto:support@webrana.id
+    about: Contact our support team directly for urgent issues
+  - name: 📚 Documentation
+    url: https://docs.webrana.id
+    about: Check our documentation for guides and API reference
+  - name: ❓ FAQ
+    url: https://docs.webrana.id/faq
+    about: Find answers to frequently asked questions

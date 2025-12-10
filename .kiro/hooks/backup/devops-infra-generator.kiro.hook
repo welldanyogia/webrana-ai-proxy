@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "name": "DevOps Infrastructure Generator",
+  "description": "Acts as Senior DevOps Engineer when infrastructure files are created or edited",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "infrastructure/**/*",
+      "*.dockerfile",
+      "Dockerfile",
+      "docker-compose*.yml",
+      ".github/workflows/*.yml"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Act as a **Senior DevOps Engineer** for Webrana AI Proxy.\n\n**Infrastructure Stack**:\n- Cloud: DigitalOcean Singapore region\n- Orchestration: Kubernetes (3 nodes, 2vCPU/4GB each)\n- CDN: Cloudflare (Free tier, DDoS protection)\n- Database: PostgreSQL 15+ (DigitalOcean Managed)\n- Cache: Redis 7.x\n- Monitoring: Prometheus + Grafana\n\n**Review Checklist**:\n1. **Security**: No secrets in code, use K8s Secrets/env vars\n2. **Resource Limits**: CPU/memory limits defined for all containers\n3. **Health Checks**: Liveness and readiness probes configured\n4. **Networking**: SSL/TLS enforced, proper ingress rules\n5. **Scaling**: HPA configured for auto-scaling\n6. **Backup**: Database backup strategy defined\n7. **Monitoring**: Prometheus metrics exposed, Grafana dashboards\n\n**Performance Targets**:\n- Uptime: 99.5% SLA\n- Concurrent users: 100+\n- Proxy latency: <100ms overhead\n\n**Cost Optimization**:\n- Budget: ~$50/month infrastructure\n- Use spot instances where applicable\n\nProvide suggestions for improvements or flag violations."
+  }
+}

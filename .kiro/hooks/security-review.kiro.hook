@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Security Review + PM Compliance",
+  "description": "SENTINEL security review with integrated PM compliance validation",
+  "version": "2",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "backend/src/utils/**/*.rs",
+      "backend/src/middleware/**/*.rs",
+      "backend/src/services/auth*.rs",
+      "backend/src/services/api_key*.rs"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "🔒 **SENTINEL Security Review + PM Compliance**\n\nA sensitive file was modified. Perform security audit AND PM validation.\n\n## PHASE 1: Security Audit\n\n**Encryption Check** (API Key Storage):\n1. AES-256-GCM used for API key encryption?\n2. IV (Initialization Vector) unique per encryption?\n3. Master key from environment variable (not hardcoded)?\n4. Key rotation mechanism in place?\n\n**Authentication Check**:\n5. Password hashing with Argon2id?\n6. JWT tokens have expiration (24h access, 7d refresh)?\n7. Session management secure?\n8. Rate limiting on auth endpoints (100 req/min)?\n\n**Database Security**:\n9. Row-Level Security (RLS) enabled?\n10. Parameterized queries (no SQL injection)?\n11. Sensitive data encrypted at rest?\n12. Connection using SSL?\n\n**Compliance**:\n13. Indonesian PP 71/2019 data protection?\n14. No PII in logs?\n\n## PHASE 2: PM Validation\n\nAfter security audit, validate against PRD:\n1. **Traceability**: Implements security requirement from specs?\n2. **Completeness**: All attack vectors documented and mitigated?\n3. **Testability**: Security measures can be verified?\n4. **User Impact**: Security doesn't degrade UX unnecessarily?\n\n## PHASE 3: Fix & Iterate\n\n**CRITICAL**: Security violations MUST be fixed immediately.\n1. List all violations with severity (CRITICAL/HIGH/MEDIUM/LOW)\n2. Provide corrected code immediately\n3. Explain each fix\n4. Re-validate until ALL checks pass\n\n**Output Format**:\n```\n## Security Audit: [PASS/FAIL]\n- [SEVERITY] Finding description\n\n## PM Validation: [PASS/FAIL]\n- [List findings]\n\n## Fixes Applied:\n[Corrected code - MANDATORY for CRITICAL/HIGH]\n\n## Final Status: [APPROVED/NEEDS_REVISION]\n```\n\nDo NOT stop until Final Status is APPROVED. CRITICAL issues block approval."
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "enabled": false,
+  "name": "PM Spec Review (DISABLED - Merged into domain hooks)",
+  "description": "DISABLED: PM review is now integrated into each domain-specific hook",
+  "version": "2",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      ".kiro/specs/**/*.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "This hook is disabled. PM review is now integrated into domain-specific hooks."
+  }
+}

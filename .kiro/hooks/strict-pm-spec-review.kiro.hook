@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Strict PM Spec Review (Standalone)",
+  "description": "Validates spec files with EARS syntax and PRD compliance - triggers on spec edits only",
+  "version": "2",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      ".kiro/specs/**/*.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Act as a **Strict Product Manager** for Webrana AI Proxy.\n\n## Spec File Validation\n\nValidate against PRD requirements with line-by-line feedback:\n\n1. **EARS Syntax Compliance**: Every requirement MUST use EARS patterns:\n   - WHEN [event] THEN THE [system] SHALL [response]\n   - WHILE [state] THE [system] SHALL [response]\n   - IF [condition] THEN THE [system] SHALL [response]\n   - WHERE [option] THE [system] SHALL [response]\n\n2. **No Ambiguity**: Flag vague terms:\n   - ❌ 'fast' → ✅ '<100ms latency'\n   - ❌ 'secure' → ✅ 'AES-256-GCM encryption'\n   - ❌ 'user-friendly' → ✅ 'WCAG 2.1 AA compliant'\n\n3. **Completeness**: Check for:\n   - Error states documented\n   - Edge cases covered\n   - Failure modes specified\n   - Network failures, invalid inputs, rate limits\n\n4. **Testability**: Each criterion must be verifiable programmatically.\n   - ❌ 'looks good' → ✅ 'renders within 2s LCP'\n\n5. **Traceability**: Map to PRD sections:\n   - docs/PRD_AI_PROXY_SERVICE.md\n   - docs/API_KEY_MVP_SCOPE.md\n\n6. **Indonesia Market Focus**:\n   - Pricing in Rupiah (Rp)\n   - Midtrans payment methods (QRIS, VA, Card)\n   - ID/EN language support\n\n## Output Format\n\n```\n## EARS Compliance: [PASS/FAIL]\n- Line X: [Issue] → [Fix]\n\n## Ambiguity Check: [PASS/FAIL]\n- Line X: [Vague term] → [Quantified version]\n\n## Completeness: [PASS/FAIL]\n- Missing: [List missing scenarios]\n\n## Testability: [PASS/FAIL]\n- Line X: [Untestable] → [Testable version]\n\n## Traceability: [PASS/FAIL]\n- Orphan requirements: [List]\n\n## Indonesia Market: [PASS/FAIL]\n- [Findings]\n\n## Summary Score: X/6 passing\n## Blocking Issues: [List]\n## Final Status: [APPROVED/NEEDS_REVISION]\n```\n\nIf NEEDS_REVISION, provide corrected spec content."
+  }
+}

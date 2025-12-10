@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "Billing Integration Review + PM Validation",
+  "description": "Reviews Midtrans payment integration with PM compliance validation",
+  "version": "2",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "backend/src/services/billing*.rs",
+      "backend/src/routes/billing*.rs",
+      "frontend/src/app/**/billing/**/*.tsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "💳 **Billing Integration Review + PM Validation** (Midtrans)\n\n## PHASE 1: Technical Review\n\n**Pricing Tiers (Rupiah)**:\n- Free: Rp 0 (1K requests, 1 provider, 1 account)\n- Starter: Rp 49,000/bln (10K requests, 2 providers, 5 accounts)\n- Pro: Rp 99,000/bln (50K requests, all providers, unlimited)\n- Team: Rp 299,000/bln (200K requests, 10 users)\n\n**Payment Methods Check**:\n1. QRIS enabled? (GoPay, OVO, Dana, LinkAja, ShopeePay)\n2. Virtual Account enabled? (BCA, BNI, BRI, Mandiri, Permata)\n3. Credit/Debit Card enabled? (Visa, Mastercard, JCB)\n\n**Webhook Security**:\n4. Midtrans signature verification implemented?\n5. Idempotency handling (duplicate webhooks)?\n6. Proper error handling for failed payments?\n\n**Invoice Generation**:\n7. PPN 11% tax calculation correct?\n8. PDF generation working?\n9. Email delivery configured?\n\n**Subscription Lifecycle**:\n10. Upgrade/downgrade prorated correctly?\n11. Cancellation at end of period?\n12. Failed payment retry logic?\n\n## PHASE 2: PM Validation\n\n1. **Pricing Accuracy**: Matches PRD pricing tiers exactly?\n2. **User Value**: Solves payment friction for Indonesian developers?\n3. **Traceability**: Maps to billing requirements in specs?\n4. **Completeness**: All payment failure scenarios handled?\n5. **Testability**: Payment flows can be tested (sandbox mode)?\n\n## PHASE 3: Fix & Iterate\n\n**IMPORTANT**: If ANY violations found:\n1. List all violations clearly\n2. Provide corrected code immediately\n3. Explain each fix\n4. Re-validate until ALL checks pass\n\n**Output Format**:\n```\n## Technical Review: [PASS/FAIL]\n- [List findings]\n\n## PM Validation: [PASS/FAIL]\n- [List findings]\n\n## Fixes Applied:\n[Corrected code if needed]\n\n## Final Status: [APPROVED/NEEDS_REVISION]\n```\n\nDo NOT stop until Final Status is APPROVED."
+  }
+}

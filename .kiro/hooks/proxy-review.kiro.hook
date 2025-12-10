@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "Proxy Logic Review + PM Validation",
+  "description": "Reviews AI proxy routing and transformation with PM compliance validation",
+  "version": "2",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "backend/src/services/proxy*.rs",
+      "backend/src/services/transformers/**/*.rs",
+      "backend/src/routes/proxy*.rs"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "🔄 **Proxy Logic Review + PM Validation**\n\n## PHASE 1: Technical Review\n\n**Provider Routing**:\n1. Model detection correct?\n   - `gpt-*` → OpenAI\n   - `claude-*` → Anthropic\n   - `gemini-*` → Google AI\n   - `qwen-*` → Alibaba\n\n**Request Transformation**:\n2. OpenAI format → Anthropic format correct?\n3. OpenAI format → Google Gemini format correct?\n4. OpenAI format → Qwen format correct?\n\n**Response Transformation**:\n5. All responses normalized to OpenAI format?\n6. Streaming (SSE) passthrough working?\n7. Error responses properly formatted?\n\n**Usage Tracking**:\n8. Tokens counted accurately (input + output)?\n9. Latency measured correctly?\n10. Cost estimation based on provider pricing?\n\n**Rate Limiting**:\n11. Per-plan limits enforced?\n    - Free: 1K/month\n    - Starter: 10K/month\n    - Pro: 50K/month\n    - Team: 200K/month\n12. Redis-backed distributed limiting?\n\n**Performance**:\n13. Proxy overhead <100ms?\n14. Connection pooling configured?\n\n## PHASE 2: PM Validation\n\n1. **User Value**: Solves API fragmentation for developers?\n2. **Traceability**: Maps to proxy requirements in specs?\n3. **Completeness**: All provider error scenarios handled?\n4. **Testability**: Transformations can be unit tested?\n5. **Performance**: Meets <100ms overhead target?\n\n## PHASE 3: Fix & Iterate\n\n**IMPORTANT**: If ANY violations found:\n1. List all violations clearly\n2. Provide corrected code immediately\n3. Explain each fix\n4. Re-validate until ALL checks pass\n\n**Output Format**:\n```\n## Technical Review: [PASS/FAIL]\n- [List findings]\n\n## PM Validation: [PASS/FAIL]\n- [List findings]\n\n## Fixes Applied:\n[Corrected code if needed]\n\n## Final Status: [APPROVED/NEEDS_REVISION]\n```\n\nDo NOT stop until Final Status is APPROVED."
+  }
+}

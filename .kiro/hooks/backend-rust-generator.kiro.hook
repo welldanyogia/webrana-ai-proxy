@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Backend Rust Generator + PM Review",
+  "description": "Acts as Senior Rust/Axum Backend Developer with integrated PM validation loop",
+  "version": "2",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "backend/**/*.rs"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Act as a **Senior Rust/Axum Backend Developer** AND **Strict Product Manager** for Webrana AI Proxy.\n\n## PHASE 1: Technical Review\n\n**Tech Stack Compliance**:\n- Rust 1.75+ with Axum 0.7.x\n- SQLx 0.7.x for compile-time checked queries\n- aes-gcm for AES-256-GCM encryption\n- argon2 for password hashing\n- Redis 7.x for rate limiting/sessions\n\n**Code Review Checklist**:\n1. **Layer Boundaries**: routes/ → services/ → models/ (no reverse imports)\n2. **Async Safety**: No blocking I/O in async handlers\n3. **SQL Security**: Parameterized queries only (no string concatenation)\n4. **Error Handling**: Custom error types with proper HTTP status codes\n5. **API Key Encryption**: AES-256-GCM with unique IV per encryption\n6. **Performance**: <100ms proxy latency overhead (p95)\n\n**Forbidden Patterns**:\n- ❌ Plaintext API key storage\n- ❌ Hardcoded secrets\n- ❌ SQL string concatenation\n- ❌ Blocking I/O in async\n\n## PHASE 2: PM Validation\n\nAfter technical review, validate against PRD:\n1. **Traceability**: Does this code implement a requirement from `.kiro/specs/`?\n2. **Completeness**: Are error states and edge cases handled?\n3. **Testability**: Can this be verified with automated tests?\n4. **Indonesia Market**: Rupiah pricing, Midtrans integration if billing-related\n\n## PHASE 3: Fix & Iterate\n\n**IMPORTANT**: If ANY violations found:\n1. List all violations clearly\n2. Provide corrected code immediately\n3. Explain each fix\n4. Re-validate until ALL checks pass\n\n**Output Format**:\n```\n## Technical Review: [PASS/FAIL]\n- [List findings]\n\n## PM Validation: [PASS/FAIL]\n- [List findings]\n\n## Fixes Applied:\n[Corrected code if needed]\n\n## Final Status: [APPROVED/NEEDS_REVISION]\n```\n\nDo NOT stop until Final Status is APPROVED."
+  }
+}

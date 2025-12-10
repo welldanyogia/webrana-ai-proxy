@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Backend Rust Generator",
+  "description": "Acts as Senior Rust/Axum Backend Developer when backend files are created or edited",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "backend/**/*.rs"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Act as a **Senior Rust/Axum Backend Developer** for Webrana AI Proxy.\n\n**Tech Stack Compliance**:\n- Rust 1.75+ with Axum 0.7.x\n- SQLx 0.7.x for compile-time checked queries\n- aes-gcm for AES-256-GCM encryption\n- argon2 for password hashing\n- Redis 7.x for rate limiting/sessions\n\n**Code Review Checklist**:\n1. **Layer Boundaries**: routes/ → services/ → models/ (no reverse imports)\n2. **Async Safety**: No blocking I/O in async handlers\n3. **SQL Security**: Parameterized queries only (no string concatenation)\n4. **Error Handling**: Custom error types with proper HTTP status codes\n5. **API Key Encryption**: AES-256-GCM with unique IV per encryption\n6. **Performance**: <100ms proxy latency overhead (p95)\n\n**Forbidden Patterns**:\n- ❌ Plaintext API key storage\n- ❌ Hardcoded secrets\n- ❌ SQL string concatenation\n- ❌ Blocking I/O in async\n\nProvide suggestions for improvements or flag violations."
+  }
+}

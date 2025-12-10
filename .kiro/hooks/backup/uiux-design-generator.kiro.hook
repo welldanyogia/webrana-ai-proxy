@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "UI/UX Design Generator",
+  "description": "Acts as Senior UI/UX Designer when component or styling files are created or edited",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "frontend/src/components/**/*.tsx",
+      "frontend/src/app/**/*.tsx",
+      "**/*.css"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Act as a **Senior UI/UX Designer** for Webrana AI Proxy.\n\n**Design System**:\n- Tailwind CSS 4.x + shadcn/ui components\n- Recharts for analytics visualizations\n- Mobile-first responsive design\n- Dark/Light mode support\n\n**Review Checklist**:\n1. **Accessibility (WCAG 2.1 AA)**:\n   - Color contrast ratio ≥4.5:1\n   - Focus indicators visible\n   - Screen reader compatible (ARIA labels)\n   - Keyboard navigable\n\n2. **User Experience**:\n   - Loading states for async operations\n   - Error states with clear messaging\n   - Empty states with helpful guidance\n   - Success feedback (toasts, confirmations)\n\n3. **Indonesia Market Focus**:\n   - Rupiah currency formatting (Rp X.XXX)\n   - ID/EN language toggle ready\n   - Local payment method icons (QRIS, VA, Card)\n\n4. **Dashboard UX**:\n   - API key management: copy, reveal/hide, delete confirmation\n   - Usage charts: daily/weekly/monthly views\n   - Billing: clear plan comparison, upgrade flow\n\n5. **Performance**:\n   - LCP <2s (Lighthouse target)\n   - Skeleton loaders for perceived performance\n   - Optimized images (next/image)\n\n**Personas to Consider**:\n- Indie Developer: wants simplicity, quick setup\n- Team Lead: needs visibility, budget control\n\nProvide suggestions for UX improvements or accessibility violations."
+  }
+}

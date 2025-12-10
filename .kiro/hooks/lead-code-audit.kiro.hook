@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "Team Lead Code Audit + PM Review",
+  "description": "Enforces DDD structure and code conventions with PM validation on new files",
+  "version": "2",
+  "when": {
+    "type": "fileCreated",
+    "patterns": [
+      "backend/src/**/*.rs",
+      "frontend/src/**/*.tsx",
+      "frontend/src/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Act as a **Senior Team Lead** AND **Strict Product Manager** for Webrana AI Proxy.\n\n## PHASE 1: Architecture Audit\n\n**Backend Structure Check (Rust)**:\n1. Is this file in the correct directory?\n   - `routes/` for HTTP handlers\n   - `services/` for business logic\n   - `models/` for database models\n   - `middleware/` for auth, rate limiting\n   - `utils/` for encryption, helpers\n2. Does filename follow snake_case.rs convention?\n3. Do imports respect layer boundaries? (routes → services → models)\n\n**Frontend Structure Check (Next.js)**:\n1. Is this file in the correct directory?\n   - `app/(marketing)/` for public pages\n   - `app/(dashboard)/` for auth-required pages\n   - `components/ui/` for shadcn primitives\n   - `components/features/` for domain components\n2. Does filename follow conventions? (PascalCase.tsx for components)\n3. Named exports used (except page.tsx)?\n\n**Code Quality Check**:\n4. TypeScript strict mode / Rust type safety\n5. Documentation for public functions\n6. Error handling with custom types\n7. Input validation (Zod for TS, custom for Rust)\n\n## PHASE 2: PM Validation\n\nAfter architecture audit, validate against PRD:\n1. **Traceability**: Does this file implement a requirement from `.kiro/specs/`?\n2. **Scope Discipline**: Is this MVP-necessary or gold-plating?\n3. **Persona Fit**: Serves Indie Developer or Team Lead needs?\n4. **Testability**: Can this be verified with automated tests?\n\n## PHASE 3: Fix & Iterate\n\n**IMPORTANT**: If ANY violations found:\n1. List all violations clearly\n2. Suggest correct file location/name if wrong\n3. Provide corrected code structure\n4. Re-validate until ALL checks pass\n\n**Output Format**:\n```\n## Architecture Audit: [PASS/FAIL]\n- [List findings]\n\n## PM Validation: [PASS/FAIL]\n- [List findings]\n\n## Fixes Required:\n[Corrected structure/code if needed]\n\n## Final Status: [APPROVED/NEEDS_REVISION]\n```\n\nDo NOT stop until Final Status is APPROVED."
+  }
+}

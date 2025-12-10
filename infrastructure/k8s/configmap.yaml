@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webrana-config
+  namespace: webrana
+data:
+  # Application settings
+  RUST_LOG: "info,webrana=debug"
+  
+  # Server configuration
+  SERVER_PORT: "3000"
+  
+  # Rate limiting settings
+  RATE_LIMIT_REQUESTS_PER_MINUTE: "100"
+  RATE_LIMIT_LOGIN_ATTEMPTS: "5"
+  RATE_LIMIT_LOGIN_BLOCK_MINUTES: "30"
+  
+  # JWT settings (non-sensitive)
+  JWT_ACCESS_TOKEN_EXPIRY_HOURS: "24"
+  JWT_REFRESH_TOKEN_EXPIRY_DAYS: "7"
+  
+  # External API endpoints
+  OPENAI_API_URL: "https://api.openai.com"
+  ANTHROPIC_API_URL: "https://api.anthropic.com"
+  GOOGLE_AI_API_URL: "https://generativelanguage.googleapis.com"

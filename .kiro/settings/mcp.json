@@ -1,0 +1,53 @@
+{
+  "mcpServers": {
+    "shadcn": {
+      "command": "npx",
+      "args": [
+        "shadcn@latest",
+        "mcp"
+      ],
+      "env": {},
+      "disabled": false,
+      "autoApprove": [
+        "get_project_registries",
+        "search_items_in_registries"
+      ]
+    },
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://postgres:postgres@localhost:5432/devdb"
+      ],
+      "env": {
+        "PGHOST": "localhost",
+        "PGPORT": "5432",
+        "PGUSER": "postgres",
+        "PGPASSWORD": "postgres",
+        "PGDATABASE": "devdb"
+      },
+      "disabled": true,
+      "autoApprove": [
+        "query",
+        "list_tables",
+        "describe_table"
+      ]
+    },
+    "git": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-git",
+        "--repository",
+        "."
+      ],
+      "env": {},
+      "disabled": true,
+      "autoApprove": [
+        "git_status",
+        "git_log",
+        "git_diff"
+      ]
+    }
+  }
+}

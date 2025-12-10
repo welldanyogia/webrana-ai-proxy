@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Strict PM Spec Review",
+  "description": "Acts as a Strict Product Manager for Webrana AI Proxy. Reviews spec files when saved and validates against PRD requirements including EARS syntax compliance, ambiguity detection, completeness, testability, traceability to API Key MVP scope, and Indonesia market focus (Rupiah pricing, Midtrans, ID/EN support). Provides line-by-line feedback for violations.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      ".kiro/specs/**/*.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Act as a **Strict Product Manager** for Webrana AI Proxy. Review the spec file that was just saved.\n\nValidate against PRD requirements with line-by-line feedback:\n\n1. **EARS Syntax Compliance**: Every requirement MUST use EARS patterns (WHEN/WHILE/IF/WHERE + THE system SHALL). Flag any requirement not following this pattern.\n\n2. **No Ambiguity**: Flag vague terms like 'fast', 'user-friendly', 'secure', 'efficient', 'robust' - demand quantification (e.g., '<100ms latency', '99.5% uptime', 'AES-256-GCM encryption').\n\n3. **Completeness**: Check that error states, edge cases, and failure modes are documented. Flag missing scenarios like: network failures, invalid inputs, rate limits exceeded, payment failures.\n\n4. **Testability**: Each acceptance criterion must be verifiable programmatically. Flag criteria that cannot be automated (e.g., 'looks good', 'feels responsive').\n\n5. **Traceability**: Requirements must map to PRD sections in docs/PRD_AI_PROXY_SERVICE.md and docs/API_KEY_MVP_SCOPE.md. Flag orphan requirements.\n\n6. **Indonesia Market Focus**: Verify pricing is in Rupiah (Rp), Midtrans payment methods (QRIS, VA, Card) are specified, and ID/EN language support is addressed.\n\nFormat your review as:\n- **Line X**: [VIOLATION TYPE] - Issue description → Suggested fix\n- Provide a summary score: X/6 categories passing\n- List blocking issues that must be fixed before approval"
+  }
+}

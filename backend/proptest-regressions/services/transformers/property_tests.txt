@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc e479008074677cb46b4f5cb23a13ba70da8185e4e5b83d92477acb16f077be80 # shrinks to request = ChatCompletionRequest { model: "test-model", messages: [Message { role: "user", content: "A" }, Message { role: "system", content: "," }, Message { role: "system", content: "." }], temperature: None, max_tokens: None, stream: false, top_p: None, frequency_penalty: None, presence_penalty: None, stop: None, user: None }
+cc 92094b407f44729343c2a12709058f91d0f5799740d45de64ee497a93104cb39 # shrinks to request = ChatCompletionRequest { model: "test-model", messages: [Message { role: "user", content: "?" }, Message { role: "system", content: "." }, Message { role: "system", content: ",H" }], temperature: Some(1.6337292), max_tokens: Some(2296), stream: true, top_p: None, frequency_penalty: None, presence_penalty: None, stop: Some(["RGUD"]), user: None }

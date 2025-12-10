@@ -1,0 +1,226 @@
+name: Hotfix Pipeline
+
+# Hotfix workflow for critical bug fixes during launch
+# Requirements: 7.1, 7.2, 7.3 - Fast deployment within 30 minutes
+# Skips non-critical CI steps (load tests) for speed
+
+on:
+  push:
+    branches: [hotfix/*]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+
+env:
+  CARGO_TERM_COLOR: always
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Quick validation - only essential tests
+  quick-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: webrana_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 3
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            backend/target/
+          key: ${{ runner.os }}-cargo-hotfix-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run critical tests only
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/webrana_test
+          REDIS_URL: redis://localhost:6379
+          MASTER_ENCRYPTION_KEY: dGVzdC1lbmNyeXB0aW9uLWtleS0zMi1ieXRlcw==
+          JWT_SECRET: test-jwt-secret
+        run: |
+          # Run only unit tests, skip integration and property tests for speed
+          cargo test --lib -- --test-threads=4
+
+      - name: Quick build check
+        working-directory: backend
+        run: cargo build --release
+
+  # Frontend quick check
+  frontend-quick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Type check
+        working-directory: frontend
+        run: npx tsc --noEmit
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+  # Fast deploy to production (requires 1 approval)
+  hotfix-deploy:
+    needs: [quick-test, frontend-quick]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/heads/hotfix/')
+    environment: 
+      name: production
+      url: https://webrana.id
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log deployment start
+        run: |
+          echo "🚨 HOTFIX DEPLOYMENT STARTED"
+          echo "Branch: ${{ github.ref }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Deployer: ${{ github.actor }}"
+          echo "Time: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: infrastructure/docker/Dockerfile.backend
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:hotfix-${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:latest
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: infrastructure/docker/Dockerfile.frontend
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:hotfix-${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:latest
+
+      - name: Deploy to Production
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Update Kubernetes deployment
+        run: |
+          doctl kubernetes cluster kubeconfig save webrana-cluster
+          
+          # Deploy with rollout
+          kubectl set image deployment/webrana-backend \
+            backend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:hotfix-${{ github.sha }} \
+            -n webrana
+          kubectl set image deployment/webrana-frontend \
+            frontend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:hotfix-${{ github.sha }} \
+            -n webrana
+          
+          # Wait for rollout
+          kubectl rollout status deployment/webrana-backend -n webrana --timeout=300s
+          kubectl rollout status deployment/webrana-frontend -n webrana --timeout=300s
+
+      - name: Verify deployment
+        run: |
+          # Health check
+          curl -f https://api.webrana.id/health || exit 1
+          curl -f https://webrana.id || exit 1
+          echo "✅ Deployment verified"
+
+      - name: Log deployment complete
+        run: |
+          echo "✅ HOTFIX DEPLOYMENT COMPLETE"
+          echo "Commit: ${{ github.sha }}"
+          echo "Time: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+      - name: Notify Slack
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+          text: |
+            🚨 *HOTFIX DEPLOYED*
+            Status: ${{ job.status }}
+            Commit: ${{ github.sha }}
+            Author: ${{ github.actor }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Rollback job (manual trigger)
+  rollback:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    environment: production
+
+    steps:
+      - name: Rollback to previous version
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Execute rollback
+        run: |
+          doctl kubernetes cluster kubeconfig save webrana-cluster
+          
+          # Rollback deployments
+          kubectl rollout undo deployment/webrana-backend -n webrana
+          kubectl rollout undo deployment/webrana-frontend -n webrana
+          
+          # Wait for rollback
+          kubectl rollout status deployment/webrana-backend -n webrana --timeout=300s
+          kubectl rollout status deployment/webrana-frontend -n webrana --timeout=300s
+          
+          echo "🔄 ROLLBACK COMPLETE"
