@@ -3,14 +3,20 @@ kind: ConfigMap
 metadata:
   name: webrana-config
   namespace: webrana
+  labels:
+    app: webrana
 data:
+  # ===========================================
+  # Backend Configuration
+  # ===========================================
+  
   # Application settings
   RUST_LOG: "info,webrana=debug"
   
   # Server configuration
   SERVER_PORT: "3000"
   
-  # Rate limiting settings
+  # Rate limiting settings (per PRD: 100 req/min per IP)
   RATE_LIMIT_REQUESTS_PER_MINUTE: "100"
   RATE_LIMIT_LOGIN_ATTEMPTS: "5"
   RATE_LIMIT_LOGIN_BLOCK_MINUTES: "30"
@@ -23,3 +29,19 @@ data:
   OPENAI_API_URL: "https://api.openai.com"
   ANTHROPIC_API_URL: "https://api.anthropic.com"
   GOOGLE_AI_API_URL: "https://generativelanguage.googleapis.com"
+  QWEN_API_URL: "https://dashscope.aliyuncs.com"
+  
+  # ===========================================
+  # Frontend Configuration
+  # ===========================================
+  
+  # API URL (production)
+  NEXT_PUBLIC_API_URL: "https://api.webrana.id"
+  
+  # NextAuth URL (production)
+  NEXTAUTH_URL: "https://webrana.id"
+  
+  # ===========================================
+  # Midtrans Configuration (non-sensitive)
+  # ===========================================
+  MIDTRANS_IS_SANDBOX: "false"

@@ -192,7 +192,7 @@ sudo ufw status
 
 ```bash
 # Clone repository
-git clone https://github.com/your-org/webrana-ai-proxy.git
+git clone https://github.com/welldanyogia/webrana-ai-proxy.git
 cd webrana-ai-proxy
 
 # Create directories

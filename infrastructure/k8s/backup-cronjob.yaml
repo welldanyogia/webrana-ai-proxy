@@ -1,0 +1,89 @@
+# ===========================================
+# Webrana Database Backup CronJob
+# Runs daily at 2 AM SGT (UTC+8)
+# ===========================================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: webrana-db-backup
+  namespace: webrana
+spec:
+  # 2 AM SGT = 6 PM UTC (previous day)
+  schedule: "0 18 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 600
+      template:
+        spec:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+          containers:
+            - name: backup
+              image: postgres:15-alpine
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+                  BACKUP_FILE="/backups/webrana_${TIMESTAMP}.sql.gz"
+                  
+                  echo "Starting backup at $(date)"
+                  
+                  # Dump database
+                  pg_dump "$DATABASE_URL" | gzip > "$BACKUP_FILE"
+                  
+                  # Verify backup
+                  if [ -s "$BACKUP_FILE" ]; then
+                    SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
+                    echo "Backup completed: $BACKUP_FILE ($SIZE)"
+                  else
+                    echo "ERROR: Backup file is empty"
+                    exit 1
+                  fi
+                  
+                  # Cleanup old backups (keep last 7 days)
+                  find /backups -name "webrana_*.sql.gz" -mtime +7 -delete
+                  
+                  echo "Backup finished at $(date)"
+              env:
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: webrana-secrets
+                      key: DATABASE_URL
+              resources:
+                requests:
+                  memory: "128Mi"
+                  cpu: "100m"
+                limits:
+                  memory: "256Mi"
+                  cpu: "200m"
+              volumeMounts:
+                - name: backup-storage
+                  mountPath: /backups
+          restartPolicy: OnFailure
+          volumes:
+            - name: backup-storage
+              persistentVolumeClaim:
+                claimName: webrana-backup-pvc
+---
+# PVC for backup storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: webrana-backup-pvc
+  namespace: webrana
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: do-block-storage

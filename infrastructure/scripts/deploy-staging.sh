@@ -9,15 +9,24 @@ set -e
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
 DEPLOY_DIR="/opt/webrana"
-# For private repos, set GIT_REPO_URL with token: https://<user>:<PAT>@github.com/...
-# Or use SSH: git@github.com:welldanyogia/webrana-ai-proxy.git
-REPO_URL="${GIT_REPO_URL:-https://github.com/welldanyogia/webrana-ai-proxy.git}"
+APP_DIR="${DEPLOY_DIR}/app"
+# Use SSH for GitHub (requires deploy key setup)
+REPO_URL="${GIT_REPO_URL:-git@github.com:welldanyogia/webrana-ai-proxy.git}"
 BRANCH="${BRANCH:-main}"
 COMPOSE_FILE="infrastructure/docker/docker-compose.prod.yml"
+
+# Cloudflare Configuration (optional - for cache purging)
+CF_ZONE_ID="${CF_ZONE_ID:-}"
+CF_API_TOKEN="${CF_API_TOKEN:-}"
+
+# Domain Configuration
+DOMAIN="${DOMAIN:-staging.webrana.id}"
+API_DOMAIN="${API_DOMAIN:-api.staging.webrana.id}"
 
 echo -e "${GREEN}=========================================${NC}"
 echo -e "${GREEN}  Webrana Staging Deployment Script     ${NC}"
@@ -180,9 +189,122 @@ verify() {
         exit 1
     fi
     
+    # Check external endpoints (via Cloudflare)
+    echo -e "${YELLOW}Checking external endpoints...${NC}"
+    if curl -sf "https://${DOMAIN}" > /dev/null 2>&1; then
+        echo -e "${GREEN}✓ Frontend accessible via https://${DOMAIN}${NC}"
+    else
+        echo -e "${YELLOW}⚠ Frontend not accessible externally (check Cloudflare/DNS)${NC}"
+    fi
+    
+    if curl -sf "https://${API_DOMAIN}/health" > /dev/null 2>&1; then
+        echo -e "${GREEN}✓ API accessible via https://${API_DOMAIN}${NC}"
+    else
+        echo -e "${YELLOW}⚠ API not accessible externally (check Cloudflare/DNS)${NC}"
+    fi
+    
     echo -e "${GREEN}=========================================${NC}"
     echo -e "${GREEN}  All services are running!              ${NC}"
     echo -e "${GREEN}=========================================${NC}"
+}
+
+# Function to purge Cloudflare cache
+purge_cache() {
+    if [ -z "$CF_ZONE_ID" ] || [ -z "$CF_API_TOKEN" ]; then
+        echo -e "${YELLOW}Cloudflare credentials not set, skipping cache purge${NC}"
+        echo -e "${YELLOW}Set CF_ZONE_ID and CF_API_TOKEN to enable${NC}"
+        return 0
+    fi
+    
+    echo -e "${YELLOW}Purging Cloudflare cache...${NC}"
+    
+    RESPONSE=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
+        -H "Authorization: Bearer ${CF_API_TOKEN}" \
+        -H "Content-Type: application/json" \
+        --data '{"purge_everything":true}')
+    
+    if echo "$RESPONSE" | grep -q '"success":true'; then
+        echo -e "${GREEN}✓ Cloudflare cache purged successfully${NC}"
+    else
+        echo -e "${RED}✗ Failed to purge Cloudflare cache${NC}"
+        echo "$RESPONSE"
+    fi
+}
+
+# Function to setup SSH for GitHub
+setup_ssh() {
+    echo -e "${YELLOW}Setting up SSH for GitHub...${NC}"
+    
+    # Check if deploy key exists
+    if [ ! -f ~/.ssh/deploy_key ]; then
+        echo -e "${YELLOW}Generating deploy key...${NC}"
+        ssh-keygen -t ed25519 -C "webrana-deploy" -f ~/.ssh/deploy_key -N ""
+        
+        echo -e "${GREEN}Deploy key generated!${NC}"
+        echo -e "${YELLOW}Add this public key to GitHub repo → Settings → Deploy keys:${NC}"
+        echo ""
+        cat ~/.ssh/deploy_key.pub
+        echo ""
+        echo -e "${YELLOW}Press Enter after adding the key to GitHub...${NC}"
+        read
+    fi
+    
+    # Setup SSH config
+    if ! grep -q "github.com" ~/.ssh/config 2>/dev/null; then
+        cat >> ~/.ssh/config << 'EOF'
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/deploy_key
+    StrictHostKeyChecking no
+EOF
+        chmod 600 ~/.ssh/config
+    fi
+    
+    # Test connection
+    echo -e "${YELLOW}Testing GitHub SSH connection...${NC}"
+    if ssh -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
+        echo -e "${GREEN}✓ GitHub SSH connection successful${NC}"
+    else
+        echo -e "${RED}✗ GitHub SSH connection failed${NC}"
+        echo -e "${YELLOW}Make sure deploy key is added to GitHub${NC}"
+        exit 1
+    fi
+}
+
+# Function to setup Cloudflare SSL certificates
+setup_cloudflare_ssl() {
+    echo -e "${YELLOW}Setting up Cloudflare Origin SSL...${NC}"
+    
+    SSL_DIR="/etc/nginx/ssl"
+    
+    if [ -f "${SSL_DIR}/cert.pem" ] && [ -f "${SSL_DIR}/key.pem" ]; then
+        echo -e "${GREEN}✓ SSL certificates already exist${NC}"
+        return 0
+    fi
+    
+    echo -e "${BLUE}=========================================${NC}"
+    echo -e "${BLUE}  Cloudflare Origin Certificate Setup   ${NC}"
+    echo -e "${BLUE}=========================================${NC}"
+    echo ""
+    echo "1. Go to Cloudflare Dashboard → SSL/TLS → Origin Server"
+    echo "2. Click 'Create Certificate'"
+    echo "3. Keep defaults (RSA 2048, 15 years)"
+    echo "4. Add hostnames: ${DOMAIN}, ${API_DOMAIN}, *.webrana.id"
+    echo "5. Click 'Create'"
+    echo ""
+    
+    sudo mkdir -p ${SSL_DIR}
+    
+    echo -e "${YELLOW}Paste the Origin Certificate (PEM format), then press Ctrl+D:${NC}"
+    sudo tee ${SSL_DIR}/cert.pem > /dev/null
+    
+    echo -e "${YELLOW}Paste the Private Key (PEM format), then press Ctrl+D:${NC}"
+    sudo tee ${SSL_DIR}/key.pem > /dev/null
+    
+    sudo chmod 600 ${SSL_DIR}/*.pem
+    
+    echo -e "${GREEN}✓ SSL certificates saved${NC}"
 }
 
 # Function to show logs
@@ -208,6 +330,7 @@ case "${1:-deploy}" in
         deploy
         run_migrations
         verify
+        purge_cache
         ;;
     build)
         build_images
@@ -233,8 +356,37 @@ case "${1:-deploy}" in
     rollback)
         rollback
         ;;
+    purge-cache)
+        purge_cache
+        ;;
+    setup-ssh)
+        setup_ssh
+        ;;
+    setup-ssl)
+        setup_cloudflare_ssl
+        ;;
+    setup)
+        setup_ssh
+        setup_cloudflare_ssl
+        check_env
+        ;;
     *)
-        echo "Usage: $0 {deploy|build|start|stop|restart|logs|status|verify|rollback}"
+        echo "Usage: $0 {deploy|build|start|stop|restart|logs|status|verify|rollback|purge-cache|setup-ssh|setup-ssl|setup}"
+        echo ""
+        echo "Commands:"
+        echo "  deploy      - Full deployment (pull, build, deploy, verify, purge cache)"
+        echo "  build       - Build Docker images only"
+        echo "  start       - Start services"
+        echo "  stop        - Stop services"
+        echo "  restart     - Restart services"
+        echo "  logs        - View logs"
+        echo "  status      - Show service status"
+        echo "  verify      - Verify deployment health"
+        echo "  rollback    - Rollback to previous version"
+        echo "  purge-cache - Purge Cloudflare cache"
+        echo "  setup-ssh   - Setup SSH deploy key for GitHub"
+        echo "  setup-ssl   - Setup Cloudflare Origin SSL certificates"
+        echo "  setup       - Run all setup steps (ssh, ssl, env check)"
         exit 1
         ;;
 esac

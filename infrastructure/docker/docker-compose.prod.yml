@@ -6,7 +6,7 @@ version: '3.8'
 # ===========================================
 
 services:
-  # Nginx Reverse Proxy
+  # Nginx Reverse Proxy (with Cloudflare Origin SSL)
   nginx:
     image: nginx:alpine
     container_name: webrana-nginx
@@ -16,16 +16,15 @@ services:
       - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-      - /var/www/certbot:/var/www/certbot:ro
+      # Cloudflare Origin SSL certificates
+      - /etc/nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       - backend
       - frontend
     networks:
       - webrana
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost/nginx-health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -95,7 +94,7 @@ services:
     container_name: webrana-frontend
     restart: unless-stopped
     expose:
-      - "3000"
+      - "3001"
     deploy:
       resources:
         limits:
@@ -113,7 +112,7 @@ services:
     networks:
       - webrana
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "curl", "-f", "http://localhost:3001"]
       interval: 30s
       timeout: 10s
       retries: 3

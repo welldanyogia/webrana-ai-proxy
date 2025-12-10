@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: webrana-backend
+  name: webrana-frontend
   namespace: webrana
   labels:
-    app: webrana-backend
+    app: webrana-frontend
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: webrana-backend
+      app: webrana-frontend
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -18,81 +18,103 @@ spec:
   template:
     metadata:
       labels:
-        app: webrana-backend
+        app: webrana-frontend
     spec:
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1000
-        fsGroup: 1000
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
-        - name: backend
-          image: webrana/backend:latest
+        - name: frontend
+          image: webrana/frontend:latest
           imagePullPolicy: Always
           ports:
-            - containerPort: 3000
+            - containerPort: 3001
               protocol: TCP
           resources:
             requests:
-              memory: "512Mi"
-              cpu: "250m"
+              memory: "256Mi"
+              cpu: "100m"
             limits:
-              memory: "1Gi"
-              cpu: "1000m"
+              memory: "512Mi"
+              cpu: "500m"
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
-          envFrom:
-            - secretRef:
-                name: webrana-secrets
-            - configMapRef:
-                name: webrana-config
+          env:
+            - name: NEXT_PUBLIC_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: webrana-config
+                  key: NEXT_PUBLIC_API_URL
+            - name: NEXTAUTH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: webrana-config
+                  key: NEXTAUTH_URL
+            - name: NEXTAUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: webrana-secrets
+                  key: NEXTAUTH_SECRET
+                  optional: true
           livenessProbe:
             httpGet:
-              path: /health
-              port: 3000
+              path: /
+              port: 3001
             initialDelaySeconds: 15
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /health
-              port: 3000
+              path: /
+              port: 3001
             initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: next-cache
+              mountPath: /app/.next/cache
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: next-cache
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: webrana-backend
+  name: webrana-frontend
   namespace: webrana
 spec:
   selector:
-    app: webrana-backend
+    app: webrana-frontend
   ports:
     - port: 80
-      targetPort: 3000
+      targetPort: 3001
       protocol: TCP
   type: ClusterIP
 ---
-# HPA for auto-scaling (supports 99.5% uptime SLA)
+# HPA for frontend
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: webrana-backend-hpa
+  name: webrana-frontend-hpa
   namespace: webrana
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: webrana-backend
+    name: webrana-frontend
   minReplicas: 2
-  maxReplicas: 5
+  maxReplicas: 4
   metrics:
     - type: Resource
       resource:
@@ -100,21 +122,15 @@ spec:
         target:
           type: Utilization
           averageUtilization: 70
-    - type: Resource
-      resource:
-        name: memory
-        target:
-          type: Utilization
-          averageUtilization: 80
 ---
-# PodDisruptionBudget for high availability
+# PodDisruptionBudget for frontend
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: webrana-backend-pdb
+  name: webrana-frontend-pdb
   namespace: webrana
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app: webrana-backend
+      app: webrana-frontend
