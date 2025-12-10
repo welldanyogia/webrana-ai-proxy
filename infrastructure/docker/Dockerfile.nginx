@@ -1,0 +1,16 @@
+# Nginx with static files from frontend build
+# This Dockerfile copies static assets from frontend build
+
+FROM nginx:alpine
+
+# Copy nginx config
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+
+# Static files will be mounted from frontend container via shared volume
+# Or copied during deployment
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=10s \
+    CMD curl -f http://localhost/nginx-health || exit 1
+
+EXPOSE 80 443

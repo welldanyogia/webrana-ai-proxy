@@ -28,12 +28,27 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Create public folder and copy built files
-RUN mkdir -p ./public
+# Copy standalone build
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+
+# Copy static files to app directory
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-# Copy public if exists (optional assets)
-COPY --from=builder /app/public ./public
+
+# Copy public folder
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+
+# Create entrypoint script to copy static files to shared volume
+RUN echo '#!/bin/sh' > /app/entrypoint.sh && \
+    echo 'echo "Copying static files to shared volume..."' >> /app/entrypoint.sh && \
+    echo 'mkdir -p /var/www/nextjs/.next' >> /app/entrypoint.sh && \
+    echo 'cp -r /app/.next/static /var/www/nextjs/.next/' >> /app/entrypoint.sh && \
+    echo 'cp -r /app/public /var/www/nextjs/' >> /app/entrypoint.sh && \
+    echo 'echo "Static files copied successfully"' >> /app/entrypoint.sh && \
+    echo 'exec node server.js' >> /app/entrypoint.sh && \
+    chmod +x /app/entrypoint.sh
+
+# Change ownership of shared volume mount point
+RUN mkdir -p /var/www/nextjs && chown -R nextjs:nodejs /var/www/nextjs
 
 USER nextjs
 
@@ -43,4 +58,4 @@ EXPOSE 3001
 ENV PORT=3001
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+ENTRYPOINT ["/app/entrypoint.sh"]
